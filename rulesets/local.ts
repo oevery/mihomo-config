@@ -47,7 +47,7 @@ export const domestic = defineRuleset('domestic', {
       '+.sui-xiang.com',
       '+.xcode.best',
     ],
-    ipcidr: ['142.252.102.74/32', '154.9.253.41/32'],
+    ipcidr: ['142.252.102.74/32', '154.9.253.41/32', '216.167.95.237/32'],
   },
 })
 
