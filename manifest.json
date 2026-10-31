@@ -1,0 +1,232 @@
+{
+  "generator": "clash-ruleset",
+  "rulesets": [
+    {
+      "name": "security",
+      "count": 142819,
+      "readable": "security.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 142819,
+          "text": "security-domain.txt",
+          "mrs": "security-domain.mrs"
+        }
+      }
+    },
+    {
+      "name": "ads",
+      "count": 37692,
+      "readable": "ads.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 37692,
+          "text": "ads-domain.txt",
+          "mrs": "ads-domain.mrs"
+        }
+      }
+    },
+    {
+      "name": "direct",
+      "count": 413,
+      "readable": "direct.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 376,
+          "text": "direct-domain.txt",
+          "mrs": "direct-domain.mrs"
+        },
+        "ipcidr": {
+          "behavior": "ipcidr",
+          "count": 28,
+          "text": "direct-ip.txt",
+          "mrs": "direct-ip.mrs"
+        },
+        "classical": {
+          "behavior": "classical",
+          "count": 9,
+          "text": "direct-classical.txt"
+        }
+      }
+    },
+    {
+      "name": "ai",
+      "count": 620,
+      "readable": "ai.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 217,
+          "text": "ai-domain.txt",
+          "mrs": "ai-domain.mrs"
+        },
+        "ipcidr": {
+          "behavior": "ipcidr",
+          "count": 400,
+          "text": "ai-ip.txt",
+          "mrs": "ai-ip.mrs"
+        },
+        "classical": {
+          "behavior": "classical",
+          "count": 3,
+          "text": "ai-classical.txt"
+        }
+      }
+    },
+    {
+      "name": "domestic_services",
+      "count": 404,
+      "readable": "domestic_services.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 404,
+          "text": "domestic_services-domain.txt",
+          "mrs": "domestic_services-domain.mrs"
+        }
+      }
+    },
+    {
+      "name": "speedtest",
+      "count": 20,
+      "readable": "speedtest.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 20,
+          "text": "speedtest-domain.txt",
+          "mrs": "speedtest-domain.mrs"
+        }
+      }
+    },
+    {
+      "name": "game_download",
+      "count": 52,
+      "readable": "game_download.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 52,
+          "text": "game_download-domain.txt",
+          "mrs": "game_download-domain.mrs"
+        }
+      }
+    },
+    {
+      "name": "global_media",
+      "count": 468,
+      "readable": "global_media.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 310,
+          "text": "global_media-domain.txt",
+          "mrs": "global_media-domain.mrs"
+        },
+        "ipcidr": {
+          "behavior": "ipcidr",
+          "count": 130,
+          "text": "global_media-ip.txt",
+          "mrs": "global_media-ip.mrs"
+        },
+        "classical": {
+          "behavior": "classical",
+          "count": 28,
+          "text": "global_media-classical.txt"
+        }
+      }
+    },
+    {
+      "name": "telegram",
+      "count": 33,
+      "readable": "telegram.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 21,
+          "text": "telegram-domain.txt",
+          "mrs": "telegram-domain.mrs"
+        },
+        "ipcidr": {
+          "behavior": "ipcidr",
+          "count": 12,
+          "text": "telegram-ip.txt",
+          "mrs": "telegram-ip.mrs"
+        }
+      }
+    },
+    {
+      "name": "apple",
+      "count": 1584,
+      "readable": "apple.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 1584,
+          "text": "apple-domain.txt",
+          "mrs": "apple-domain.mrs"
+        }
+      }
+    },
+    {
+      "name": "microsoft",
+      "count": 637,
+      "readable": "microsoft.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 637,
+          "text": "microsoft-domain.txt",
+          "mrs": "microsoft-domain.mrs"
+        }
+      }
+    },
+    {
+      "name": "proxy",
+      "count": 4439,
+      "readable": "proxy.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 4439,
+          "text": "proxy-domain.txt",
+          "mrs": "proxy-domain.mrs"
+        }
+      }
+    },
+    {
+      "name": "domestic",
+      "count": 120199,
+      "readable": "domestic.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 110184,
+          "text": "domestic-domain.txt",
+          "mrs": "domestic-domain.mrs"
+        },
+        "ipcidr": {
+          "behavior": "ipcidr",
+          "count": 10015,
+          "text": "domestic-ip.txt",
+          "mrs": "domestic-ip.mrs"
+        }
+      }
+    },
+    {
+      "name": "fakeip_filter",
+      "count": 243,
+      "readable": "fakeip_filter.txt",
+      "files": {
+        "domain": {
+          "behavior": "domain",
+          "count": 243,
+          "text": "fakeip_filter-domain.txt",
+          "mrs": "fakeip_filter-domain.mrs"
+        }
+      }
+    }
+  ]
+}
