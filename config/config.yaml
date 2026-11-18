@@ -1,16 +1,16 @@
 anchor-provider:
   pf: &pf { type: file, health-check: { enable: true, url: https://www.gstatic.com/generate_204, interval: 300, expected-status: 204 } }
-  ph: &ph { type: http, interval: 43200, proxy: DIRECT, health-check: { enable: true, url: https://www.gstatic.com/generate_204, interval: 300, expected-status: 204 } }
+  ph: &ph { type: http, interval: 43200, proxy: DIRECT, exclude-filter: '(?i)https?://|官网|官方(?:网站|频道|公告)|用户群|电报群|交流群|防失联|漏洞|账户|过期时间|到期日期|到期时间|剩余流量|已用流量|流量已用|重置|套餐|订阅|expire|traffic', health-check: { enable: true, url: https://www.gstatic.com/generate_204, interval: 300, expected-status: 204 } }
 
 proxy-providers:
   provider1:
     <<: *ph
     url: https://example.com/subscription.yaml
     path: ./proxy_providers/provider1.yaml
-    # 仅在跨机场节点实际同名时按需添加前缀
-    # override:
-    #   additional-prefix: "[provider1] "
-    exclude-filter: '(?i)官网|用户群|漏洞|账户|过期时间|剩余流量|重置|套餐|订阅|expire|traffic'
+    # 节点命名：[供应商] 入口 → 出口线路 [倍率,标签…]
+    # 供应商缩写以大写字母开头，可带数字、下划线和连字符；入口和尾部标签按需省略。
+    # 出口以标准地区名开头：香港、台湾、新加坡、日本、美国。
+    # 仅在原名不符合约定时，按该订阅的实际命名设置 override，不启用通用改名规则。
     # 可选：只对名称确实包含倍率标签的机场启用，否则会排除全部未标注节点。
     # 仅保留名称标注倍率不大于1的节点
     # 不使用单词边界，兼容倍率数值紧贴中文的节点名称
@@ -94,15 +94,12 @@ anchor-proxy:
   preferred_direct: &preferred_direct { type: select, proxies: [直连, 代理, 香港, 台湾, 新加坡, 日本, 美国, 其他区域, 全部节点] }
   # 空组拒绝连接；直连仅通过明确的“直连”策略组选择。
   native_nodes: &native_nodes { type: select, include-all: true, exclude-type: direct|easytier, exclude-filter: *exclude_node_info, empty-fallback: REJECT }
-  # 匹配出口地区：地区名之后若还有“转”或箭头，则不是最终出口。
-  # 英文短码使用字母边界，兼容 HK01/US01，避免误匹配 Australia/Russia。
-  hk: &hk '(?i)(?:🇭🇰|香港|深港|沪港|滬港|hong[ _-]*kong|(?:^|[^A-Za-z])hk(?=$|[^A-Za-z]))(?!.*(?:转|→|->))'
-  taiwan: &taiwan '(?i)(?:🇹🇼|台湾|臺灣|台北|臺北|taiwan|(?:^|[^A-Za-z])tw(?=$|[^A-Za-z]))(?!.*(?:转|→|->))'
-  singapore: &singapore '(?i)(?:🇸🇬|新加坡|狮城|獅城|singapore|(?:^|[^A-Za-z])sg(?=$|[^A-Za-z]))(?!.*(?:转|→|->))'
-  japan: &japan '(?i)(?:🇯🇵|日本|东京|東京|大阪|japan|(?:^|[^A-Za-z])jp(?=$|[^A-Za-z]))(?!.*(?:转|→|->))'
-  us: &us '(?i)(?:🇺🇸|🇺🇲|美国|美國|美东|美西|洛杉矶|纽约|united[ _-]*states|(?:^|[^A-Za-z])us(?:a)?(?=$|[^A-Za-z]))(?!.*(?:转|→|->))'
-  # 其他区域是上述地区的补集，调整地区别名时同步此表达式。
-  other: &other '(?i)^(?!.*(?:(?:🇭🇰|香港|深港|沪港|滬港|hong[ _-]*kong|(?:^|[^A-Za-z])hk(?=$|[^A-Za-z]))|(?:🇹🇼|台湾|臺灣|台北|臺北|taiwan|(?:^|[^A-Za-z])tw(?=$|[^A-Za-z]))|(?:🇸🇬|新加坡|狮城|獅城|singapore|(?:^|[^A-Za-z])sg(?=$|[^A-Za-z]))|(?:🇯🇵|日本|东京|東京|大阪|japan|(?:^|[^A-Za-z])jp(?=$|[^A-Za-z]))|(?:🇺🇸|🇺🇲|美国|美國|美东|美西|洛杉矶|纽约|united[ _-]*states|(?:^|[^A-Za-z])us(?:a)?(?=$|[^A-Za-z])))(?!.*(?:转|→|->))).*$'
+  hk: &hk '^\[[A-Z][A-Z0-9_-]*\][ \t]*(?>[^→\[\]]*→[ \t]*|)香港'
+  taiwan: &taiwan '^\[[A-Z][A-Z0-9_-]*\][ \t]*(?>[^→\[\]]*→[ \t]*|)台湾'
+  singapore: &singapore '^\[[A-Z][A-Z0-9_-]*\][ \t]*(?>[^→\[\]]*→[ \t]*|)新加坡'
+  japan: &japan '^\[[A-Z][A-Z0-9_-]*\][ \t]*(?>[^→\[\]]*→[ \t]*|)日本'
+  us: &us '^\[[A-Z][A-Z0-9_-]*\][ \t]*(?>[^→\[\]]*→[ \t]*|)美国'
+  other: &other '^(?!\[[A-Z][A-Z0-9_-]*\][ \t]*(?>[^→\[\]]*→[ \t]*|)(?:香港|台湾|新加坡|日本|美国))'
 
 proxy-groups:
   # PASS 继续后续分流；DIRECT 会强制直连，不能用来表示关闭拦截。
