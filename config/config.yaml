@@ -30,7 +30,7 @@ mode: rule
 
 log-level: info # 日志等级 silent/error/warning/info/debug
 
-ipv6: true
+ipv6: false
 
 external-controller: 127.0.0.1:9090
 secret: CHANGE_ME # 使用前设置控制器口令
@@ -46,7 +46,7 @@ dns:
   enable: true
   cache-algorithm: arc
   listen: 127.0.0.1:1053
-  ipv6: true
+  ipv6: false
   enhanced-mode: fake-ip
   # DNS 连接遵循规则；关键上游显式指定出口，避免节点解析依赖代理。
   respect-rules: true
@@ -85,6 +85,19 @@ tun:
   # 仅 Android 按需启用包名排除，其他平台不使用此项。
   # exclude-package:
   #   - com.tailscale.ipn
+
+sniffer:
+  enable: true
+  parse-pure-ip: true
+  force-dns-mapping: false
+  override-destination: false
+  sniff:
+    HTTP:
+      ports: [80, 8080]
+    TLS:
+      ports: [443, 8443]
+    QUIC:
+      ports: [443]
 
 # 地区筛选由 Mihomo 统一处理，适用于内嵌节点和远程 Provider。
 anchor-proxy:

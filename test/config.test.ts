@@ -15,7 +15,14 @@ it('keeps compact named anchors and the configured section order without changin
   for (const name of ['providerset.yaml', 'header.yaml', 'proxyset.yaml', 'routing.yaml']) {
     Object.assign(expected, parse(readFileSync(new URL(`../config/${name}`, import.meta.url), 'utf8'), { merge: true }))
   }
-  assert.deepEqual(parse(actual, { merge: true }), expected)
+  const config = parse(actual, { merge: true })
+  assert.equal(config.ipv6, false)
+  assert.equal(config.dns.ipv6, false)
+  assert.equal(config.sniffer.enable, true)
+  assert.equal(config.sniffer['parse-pure-ip'], true)
+  assert.equal(config.sniffer['force-dns-mapping'], false)
+  assert.equal(config.sniffer['override-destination'], false)
+  assert.deepEqual(config, expected)
   assert.match(actual, /ph: &ph \{ type: http,.*health-check: \{ enable:/)
   assert.match(actual, /provider1:\n\s+<<: \*ph/)
   assert.match(actual, /preferred_proxy: &preferred_proxy \{ type: select, proxies: \[\S.*\S\] \}/)

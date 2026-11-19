@@ -17,6 +17,10 @@
 
 “国外媒体”默认跟随“代理”，可手动固定到某个地区。媒体规则包含影音、播客及平台配套服务，部分进程规则会分流整个应用，不仅是播放请求；路由器不能依赖它们识别客户端应用。配置检查或节点连通不代表媒体解锁、AI 服务可用或真实设备验收。
 
+默认关闭顶层 `ipv6` 和 `dns.ipv6`。需要 IPv6 时，在自己的配置副本中按需开启这两项。
+
+默认对没有域名的 HTTP（80、8080）、TLS（443、8443）和 QUIC（443）流量尝试嗅探。识别出的域名仅用于分流，不替换原拨号目标，也不替代系统 DNS 接入。
+
 主分支保存源码和完整配置，`release` 分支仅发布规则及 `manifest.json`。只使用规则集时，参考 `config/routing.yaml` 的 Provider 定义，并将目标策略改为自己的策略组名称。
 
 ## 本地构建
@@ -183,7 +187,7 @@ test/             # 行为测试
 配置按 `providerset.yaml` → `header.yaml` → `proxyset.yaml` → `routing.yaml` 合成 `config.yaml`，保留 YAML 锚点、别名及合并引用：
 
 - `providerset.yaml`：订阅 Provider 示例与节点命名约定。
-- `header.yaml`：基础参数、DNS、TUN。
+- `header.yaml`：基础参数、DNS、TUN、域名嗅探。
 - `proxyset.yaml`：业务与地区策略组。
 - `routing.yaml`：根据实际规则分区自动生成。
 
