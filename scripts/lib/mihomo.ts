@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { chmod, mkdir, mkdtemp, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -46,9 +46,9 @@ export async function ensureMihomo(options: Options = {}): Promise<string> {
     return path
   }
 
-  const requested = (options.version ?? process.env.MIHOMO_VERSION)?.trim() || 'latest'
-  if (requested !== 'latest' && !/^v\d+\.\d+\.\d+$/.test(requested))
-    throw new Error('MIHOMO_VERSION must be latest or a stable tag such as v1.19.32')
+  const requested = (options.version ?? await readFile(join(root, '.mihomo-version'), 'utf8')).trim()
+  if (!/^v\d+\.\d+\.\d+$/.test(requested))
+    throw new Error('Expected a stable vX.Y.Z tag in .mihomo-version')
   const platform = options.platform ?? process.platform
   const arch = options.arch ?? process.arch
   if (!['darwin', 'linux'].includes(platform) || !['x64', 'arm64'].includes(arch))
@@ -56,12 +56,11 @@ export async function ensureMihomo(options: Options = {}): Promise<string> {
   const target = `${platform}-${arch === 'x64' ? 'amd64' : arch}`
   const directory = options.directory ?? join(root, '.tools', 'mihomo')
   const destination = join(directory, `${target}-${requested}`)
-  // latest 仅在首次下载或显式刷新时解析，日常构建可以离线复用内核。
   if (!options.force) {
     try {
       await stat(destination)
       const version = binaryVersion(await verify(destination))
-      if (requested !== 'latest' && requested !== version)
+      if (requested !== version)
         throw new Error('Cached Mihomo version mismatch; run pnpm mihomo --force')
       return destination
     }
@@ -77,15 +76,14 @@ export async function ensureMihomo(options: Options = {}): Promise<string> {
   let temporary: string | undefined
   try {
     const request = options.fetch ?? fetch
-    const endpoint = requested === 'latest' ? 'latest' : `tags/${requested}`
-    const response = await request(`https://api.github.com/repos/MetaCubeX/mihomo/releases/${endpoint}`, {
+    const response = await request(`https://api.github.com/repos/MetaCubeX/mihomo/releases/tags/${requested}`, {
       headers: { Accept: 'application/vnd.github+json' },
       signal: AbortSignal.timeout(30_000),
     })
     if (!response.ok)
       throw new Error(`Mihomo release lookup failed: HTTP ${response.status}`)
     const release = await response.json() as { tag_name: string, draft: boolean, prerelease: boolean, assets: { name: string, digest?: string, browser_download_url: string }[] }
-    if (!/^v\d+\.\d+\.\d+$/.test(release.tag_name) || release.draft || release.prerelease || (requested !== 'latest' && release.tag_name !== requested))
+    if (release.tag_name !== requested || release.draft || release.prerelease)
       throw new Error('Mihomo release does not match the requested stable version')
     const asset = release.assets.find(asset => asset.name === `mihomo-${target}-${release.tag_name}.gz`)
     if (!asset || !/^sha256:[a-f0-9]{64}$/.test(asset.digest ?? ''))

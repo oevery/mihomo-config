@@ -8,16 +8,54 @@ import { it } from 'node:test'
 import { gzipSync } from 'node:zlib'
 import { ensureMihomo } from '../scripts/lib/mihomo.ts'
 
-it('downloads a verified release, reuses offline cache and preserves it on failed refresh', async (t) => {
+it('downloads the locked release and reuses its cache without network access', async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), 'mihomo-locked-test-'))
+  t.after(() => rm(directory, { recursive: true, force: true }))
+  const tag = (await readFile(new URL('../.mihomo-version', import.meta.url), 'utf8')).trim()
+  const archive = gzipSync(Buffer.from(tag))
+  const metadataUrl = `https://api.github.com/repos/MetaCubeX/mihomo/releases/tags/${tag}`
+  const assetUrl = `https://github.com/MetaCubeX/mihomo/releases/download/${tag}/mihomo.gz`
+  const options = {
+    directory,
+    bin: '',
+    platform: 'linux',
+    arch: 'x64',
+    verify: async (path: string) => `Mihomo Meta ${await readFile(path, 'utf8')} linux amd64`,
+    fetch: (async (input) => {
+      if (String(input) === metadataUrl) {
+        return Response.json({
+          tag_name: tag,
+          draft: false,
+          prerelease: false,
+          assets: [{
+            name: `mihomo-linux-amd64-${tag}.gz`,
+            digest: `sha256:${createHash('sha256').update(archive).digest('hex')}`,
+            browser_download_url: assetUrl,
+          }],
+        })
+      }
+      assert.equal(String(input), assetUrl)
+      return new Response(archive)
+    }) satisfies typeof fetch,
+  }
+  const path = await ensureMihomo(options)
+  assert.equal(path, join(directory, `linux-amd64-${tag}`))
+  assert.equal(await ensureMihomo({ ...options, fetch: async () => {
+    throw new Error('offline')
+  } }), path)
+})
+
+it('preserves the cached executable on failed refresh and isolates versions', async (t) => {
   const directory = await mkdtemp(join(tmpdir(), 'mihomo-download-test-'))
   t.after(() => rm(directory, { recursive: true, force: true }))
-  let tag = 'v1.2.3'
+  const original = 'v1.2.3\noriginal executable'
+  const replacement = 'v1.2.3\nreplacement executable'
+  let contents = original
   let badDigest = false
   let badExecutable = false
-  let requests = 0
   const request: typeof fetch = async (input) => {
-    requests++
-    const archive = gzipSync(Buffer.from(tag))
+    const [tag] = contents.split('\n', 1)
+    const archive = gzipSync(Buffer.from(contents))
     if (String(input).startsWith('https://api.github.com/')) {
       return Response.json({
         tag_name: tag,
@@ -35,38 +73,38 @@ it('downloads a verified release, reuses offline cache and preserves it on faile
   const options = {
     directory,
     bin: '',
-    version: 'latest',
+    version: 'v1.2.3',
     platform: 'linux',
     arch: 'x64',
     fetch: request,
-    verify: async (path: string) => `Mihomo Meta ${badExecutable ? 'v0.0.0' : await readFile(path, 'utf8')} linux amd64`,
+    verify: async (path: string) => {
+      const [version] = (await readFile(path, 'utf8')).split('\n', 1)
+      return `Mihomo Meta ${badExecutable ? 'v0.0.0' : version} linux amd64`
+    },
   }
   // 兼容旧版本中断后残留的锁；不清除可能属于旧进程的目录。
-  const legacyLock = join(directory, 'linux-amd64-latest.lock')
+  const legacyLock = join(directory, 'linux-amd64-v1.2.3.lock')
   await mkdir(legacyLock)
   await writeFile(join(legacyLock, 'owner'), 'leave untouched')
   const path = await ensureMihomo(options)
-  assert.equal(await readFile(path, 'utf8'), 'v1.2.3')
-  assert.equal(requests, 2)
-  await ensureMihomo({ ...options, fetch: async () => {
-    throw new Error('offline')
-  } })
-  tag = 'v1.2.4'
+  assert.equal(await readFile(path, 'utf8'), original)
+  contents = replacement
   badDigest = true
   await assert.rejects(ensureMihomo({ ...options, force: true }), /SHA-256 mismatch/)
-  assert.equal(await readFile(path, 'utf8'), 'v1.2.3')
+  assert.equal(await readFile(path, 'utf8'), original)
   badDigest = false
   badExecutable = true
   await assert.rejects(ensureMihomo({ ...options, force: true }), /version mismatch/)
-  assert.equal(await readFile(path, 'utf8'), 'v1.2.3')
+  assert.equal(await readFile(path, 'utf8'), original)
   badExecutable = false
-  await ensureMihomo({ ...options, force: true })
-  assert.equal(await readFile(path, 'utf8'), 'v1.2.4')
-  await assert.rejects(ensureMihomo({ ...options, version: 'v1.2.3' }), /requested stable version/)
+  contents = 'v1.2.4\nnew version'
+  await assert.rejects(ensureMihomo({ ...options, force: true }), /requested stable version/)
   const pinned = await ensureMihomo({ ...options, version: 'v1.2.4' })
   assert.notEqual(pinned, path)
+  assert.equal(await readFile(pinned, 'utf8'), contents)
+  contents = replacement
   await assert.rejects(ensureMihomo({ ...options, force: true, fetch: async () => new Response(null, { status: 503 }) }), /HTTP 503/)
-  assert.equal(await readFile(path, 'utf8'), 'v1.2.4')
+  assert.equal(await readFile(path, 'utf8'), original)
   assert.equal(await readFile(join(legacyLock, 'owner'), 'utf8'), 'leave untouched')
 
   // 一个下载暂停时，另一个可以完成；暂停者失败也不能清理其他调用的产物。
@@ -81,14 +119,13 @@ it('downloads a verified release, reuses offline cache and preserves it on faile
   try {
     await entered.promise
     await ensureMihomo({ ...options, force: true })
-    assert.equal(await readFile(path, 'utf8'), 'v1.2.4')
   }
   finally {
     release.resolve()
     await failed
   }
   assert.equal(await ensureMihomo(options), path)
-  assert.equal(await readFile(path, 'utf8'), 'v1.2.4')
+  assert.equal(await readFile(path, 'utf8'), replacement)
 })
 
 it('respects external binaries and rejects unsupported downloads without network access', async () => {
@@ -100,6 +137,6 @@ it('respects external binaries and rejects unsupported downloads without network
   await assert.rejects(ensureMihomo({ ...options, bin: 'invalid', verify: async () => {
     throw new Error('invalid binary')
   } }), /invalid binary/)
-  await assert.rejects(ensureMihomo({ ...options, bin: '', version: '../escape' }), /MIHOMO_VERSION/)
-  await assert.rejects(ensureMihomo({ ...options, bin: '', version: 'latest', platform: 'win32' }), /set MIHOMO_BIN/)
+  await assert.rejects(ensureMihomo({ ...options, bin: '', version: '../escape' }), /\.mihomo-version/)
+  await assert.rejects(ensureMihomo({ ...options, bin: '', platform: 'win32' }), /set MIHOMO_BIN/)
 })

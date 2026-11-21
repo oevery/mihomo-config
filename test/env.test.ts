@@ -12,8 +12,8 @@ it('loads dotenv defaults without overriding supplied variables and tolerates on
   const path = pathToFileURL(join(directory, '.env'))
   const environment: NodeJS.ProcessEnv = { MRS: 'false', RULESET_BASE_URL: '' }
   loadEnvironment(path, environment)
-  await writeFile(path, 'MRS=true\nRULESET_BASE_URL=https://example.com/\nMIHOMO_VERSION=v1.2.3\n')
+  await writeFile(path, 'MRS=true\nRULESET_BASE_URL=https://example.com/\nMIHOMO_BIN=mihomo\n')
   loadEnvironment(path, environment)
-  assert.deepEqual(environment, { MRS: 'false', RULESET_BASE_URL: '', MIHOMO_VERSION: 'v1.2.3' })
+  assert.deepEqual(environment, { MRS: 'false', RULESET_BASE_URL: '', MIHOMO_BIN: 'mihomo' })
   assert.throws(() => loadEnvironment(pathToFileURL(directory), environment), /Unable to read project .env/)
 })

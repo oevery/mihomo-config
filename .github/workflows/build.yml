@@ -33,10 +33,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Cache Mihomo
+        uses: actions/cache@v6.1.0
+        with:
+          path: .tools/mihomo
+          key: mihomo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.mihomo-version') }}
+
       - name: Prepare Mihomo
         run: pnpm run mihomo
-        env:
-          MIHOMO_VERSION: ${{ vars.MIHOMO_VERSION }}
 
       - run: pnpm run check
 
